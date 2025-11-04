@@ -616,6 +616,120 @@ async function checkAllTokens() {
   }
 }
 
+// ---------- Gizmo AI Proxy with Markdown rendering ----------
+async function Gizmo() {
+  const input = id("gizmo-input");
+  const resultDiv = id("gizmo-result");
+  if (!input || !resultDiv) return;
+
+  let jsonData;
+  try {
+    jsonData = JSON.parse(input.value);
+  } catch {
+    resultDiv.innerHTML = "❌ Błąd: nieprawidłowy JSON w polu wejściowym.";
+    resultDiv.className = "mt-4 text-sm text-red-400 bg-gray-800 p-3 rounded-md border border-red-700 overflow-auto max-h-60 font-mono";
+    return;
+  }
+
+  resultDiv.innerHTML = "⏳ Wysyłanie zapytania do Gizmo AI...";
+  resultDiv.className = "mt-4 text-sm text-gray-300 bg-gray-800 p-3 rounded-md border border-gray-700 overflow-auto max-h-96 font-mono";
+
+  try {
+    const resp = await fetch(`${API_URL}/gizmo_ai`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(jsonData),
+    });
+
+    const text = await resp.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { success: false, response: text };
+    }
+
+    // Determine what to render
+    let content = "";
+    if (data.success && data.response && data.response.response) {
+      content = data.response.response;
+    } else if (data.response) {
+      content = JSON.stringify(data.response, null, 2);
+    } else {
+      content = "❌ Nieoczekiwany format odpowiedzi:\n" + text;
+    }
+
+    // Render Markdown
+    resultDiv.innerHTML = marked.parse(content);
+    hljs.highlightAll();
+
+  } catch (err) {
+    resultDiv.innerHTML = "❌ Błąd połączenia: " + err.message;
+  }
+}
+
+
+// Called when you click the Send button or press Enter
+async function sendMessage() {
+  const msg = document.getElementById("msg").value.trim();
+  const resultDiv = document.getElementById("gizmo-result");
+  if (!msg) return alert("Please type a message.");
+
+  resultDiv.innerHTML = "⏳ Sending message to Gizmo AI...";
+
+  // Automatically build the correct JSON format
+  const payload = {
+    _tag: "AIChat",
+    messages: [{ role: "user", content: msg }]
+  };
+
+  try {
+    const res = await fetch("/gizmo_ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+
+    // Extract message from response
+    let message = "";
+    if (typeof data === "object" && data.response) {
+      message = data.response.response || JSON.stringify(data.response, null, 2);
+    } else {
+      message = text;
+    }
+
+    // Render Markdown and code highlighting
+    // ✅ FIXED
+    if (window.marked) {
+      resultDiv.innerHTML = marked.parse(message);
+    } else {
+      console.error("❌ Marked library not loaded properly");
+      resultDiv.textContent = message;
+    }
+    if (window.hljs) hljs.highlightAll();
+
+  } catch (e) {
+    resultDiv.textContent = "❌ Error sending message: " + e.message;
+  }
+}
+
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = id("gizmo-send");
+  if (btn) btn.addEventListener("click", sendToGizmo);
+});
+
+
 // ---------- init ----------
 document.addEventListener("DOMContentLoaded", () => {
   loadContests();

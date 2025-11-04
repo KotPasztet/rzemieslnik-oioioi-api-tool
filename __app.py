@@ -53,6 +53,53 @@ def add_log(contest, problem, status, response_text):
             "response": response_text[:200],
         })
 
+
+# -------------------------------
+# 🤖 Gizmo AI Proxy Endpoint
+# -------------------------------
+@app.route("/gizmo_ai", methods=["POST"])
+def gizmo_ai():
+    """
+    Proxies JSON requests to Gizmo AI endpoint.
+    Always forwards to https://gizmo.ai/ai-explain?_data=routes%2F_api%2B%2F_ai-explain%2B%2Fai-explain
+    """
+    try:
+        # Parse incoming JSON
+        incoming_data = request.get_json(force=True)
+
+        if not incoming_data:
+            return jsonify({"success": False, "error": "Missing JSON body"}), 400
+
+        gizmo_url = (
+            "https://gizmo.ai/ai-explain"
+            "?_data=routes%2F_api%2B%2F_ai-explain%2B%2Fai-explain"
+        )
+
+        headers = {"Content-Type": "application/json"}
+
+        response = requests.post(
+            gizmo_url,
+            headers=headers,
+            data=json.dumps(incoming_data),
+            timeout=20,
+        )
+
+        return jsonify({
+            "success": True,
+            "status_code": response.status_code,
+            "response": response.json() if "application/json" in response.headers.get("Content-Type", "") else response.text,
+        }), response.status_code
+
+    except requests.Timeout:
+        return jsonify({"success": False, "error": "Request timed out"}), 504
+    except requests.ConnectionError:
+        return jsonify({"success": False, "error": "Connection error"}), 503
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # -------------------------------
 # 🔧 Submit solution function
 # -------------------------------

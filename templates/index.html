@@ -20,6 +20,10 @@
         </script>
 
         <script src="{{ url_for('static', filename='vendor/feather.js') }}"></script>
+        <script src="{{ url_for('static', filename='vendor/markdown.js') }}"></script>
+        <script src="{{ url_for('static', filename='vendor/highlight.js') }}"></script>
+        <script src="{{ url_for('static', filename='vendor/common.js') }}"></script>
+
         <link
             rel="stylesheet"
             href="{{ url_for('static', filename='vendor/PT_Sans.css') }}"
@@ -28,7 +32,6 @@
             rel="stylesheet"
             href="{{ url_for('static', filename='vendor/Michroma.css') }}"
         />
-
         <style>
             .dropzone-active,
             .drag-over {
@@ -553,7 +556,18 @@
                         <i data-feather="zap" class="mr-2 w-4"></i> Wyślij Spam
                     </button>
                 </div>
+
+                <!-- Gizmo AI Chat Section -->
+                <div class="bg-gray-700/50 p-6 rounded-lg border-l-4 border-secondary mb-6">
+                  <h2 class="text-xl font-semibold mb-4 text-violet-300">AI Chat</h2>
                 
+                  <input id="msg" type="text" placeholder="Type your message..." class="p-2 border rounded w-80">
+                    <button onclick="sendMessage()" class="ml-2 px-3 py-1 bg-blue-500 text-white rounded">Send</button>
+
+                    <div id="gizmo-result" class="mt-4 text-sm text-gray-300 bg-gray-800 p-3 rounded-md border border-gray-700 overflow-auto max-h-60 font-mono">
+                      Waiting for response...
+                    </div>
+                </div>
 
                 <!-- Logs -->
                 <div
